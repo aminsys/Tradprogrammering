@@ -5,7 +5,6 @@
 #include <chrono>
 #include <conio.h>
 #include <deque> 
-#include <thread>
 #include <mutex>
 #include "Console.h"
 
@@ -18,8 +17,7 @@ mutex mtx;
 
 // Global variables
 char c;
-//int gX1 = 0, gY1 = 0;
-
+bool gCHECKDRAW = true;
 
 class Player
 {
@@ -75,7 +73,6 @@ public:
 };
 
 
-
 class Game
 {
 
@@ -85,44 +82,46 @@ public:
 	Game(){}
 	~Game(){}
 
-	static void DrawChar(const Player& player) // Thought const would help.
+	static void DrawChar(Player& player1, Player& player2) // Thought const would help.
 	{
 
-		while (true)
+		while (CollisionCheck(player1, player2))
 		{
 			Console::clrscr();
 
-			Console::gotoxy(50, 0);
-			for (auto column = 0; column < 27; ++column)
+			Console::gotoxy(25, 0);
+			for (auto column = 0; column < 14; ++column)
 			{
 				cout << "|\n";
-				Console::gotoxy(50, column);
+				Console::gotoxy(25, column);
 			}
-			Console::gotoxy(0, 26);
-			for (auto row = 0; row < 50; ++row)
+			Console::gotoxy(0, 13);
+			for (auto row = 0; row < 25; ++row)
 			{
 				cout << "-";
 			}
 
 			mtx.lock();
-			/*Console::gotoxy(gX1, gY1);
-			cout << player.getPosY();*/
-			Console::gotoxy(player.getPosX(), player.getPosY());
-			cout << player.getPosY();
+			Console::gotoxy(player1.getPosX(), player1.getPosY());
+			cout << player1.getName();
+			Console::gotoxy(player2.getPosX(), player2.getPosY());
+			cout << player2.getName();
 			mtx.unlock();
 
 			// To make the plane more stable.
 			this_thread::sleep_for(chrono::milliseconds(300));
 		}
 
+		gCHECKDRAW = false; // Stops all other while loops in Move and Input.
 	}
 
-	// Check later!
+	// Check for collision!
 	static bool CollisionCheck(Player player1, Player player2)
 	{
 		if ((player1.getPosX() == player2.getPosX()) &&
 			(player1.getPosY() == player2.getPosY()))
 		{
+			Console::gotoxy(2, 15);
 			cout << "\nThe game has come to an end!\nGood luck next time!\n";
 			return false;
 		}
@@ -131,7 +130,7 @@ public:
 
 	static void Input()
 	{
-		while(true)
+		while(gCHECKDRAW)
 		{
 			if(_kbhit())
 			{
@@ -144,26 +143,31 @@ public:
 
 	static void Move(Player& player)
 	{	
-		//gX1 = player.getPosX(), gY1 = player.getPosY();
 		int x = player.getPosX(), y = player.getPosY();
 
-		while (true)
+		while (gCHECKDRAW)
 		{
 			mtx.lock();
 			if (c == player.charPlayer[0])
 			{
 				c = 'x'; // Erase input character.
 				player.setPosY(++y);
-				if (player.getPosY() > 25)
-					player.setPosY(25);
+				if (player.getPosY() > 12)
+				{
+					y = 12;
+					player.setPosY(y);
+				}
 			}
 			
 			if (c == player.charPlayer[1])
 			{
 				c = 'x';
 				player.setPosX(++x);
-				if (player.getPosX() > 49)
-					player.setPosX(49);
+				if (player.getPosX() > 24)
+				{
+					x = 24;
+					player.setPosX(x);					
+				}
 			}
 
 			if (c == player.charPlayer[2])
@@ -171,7 +175,10 @@ public:
 				c = 'x'; 
 				player.setPosY(--y);
 				if (player.getPosY() < 0)
-					player.setPosY(0);
+				{
+					y = 0;
+					player.setPosY(y);
+				}
 			}
 
 			if (c == player.charPlayer[3])
@@ -179,37 +186,34 @@ public:
 				c = 'x';
 				player.setPosX(--x);
 				if (player.getPosX() < 0)
-					player.setPosX(0);
+				{
+					x = 0;
+					player.setPosX(x);
+				}
 			}
-
-			//if (_kbhit())
-			//{
-			//	Console::gotoxy(player.getPosX(), player.getPosY());
-			//	cout << player.getPosY();
-			//}
 			mtx.unlock();
 		}
 	}
 
-
+#if 0
 	void StartGame()
 	{
 		// Create player 1 and player 2.
-		Player p1('1', 'a', 'w', 'd', 's', 15, 5);
-		Player p2('2', 'g', 'y', 'j', 'h', 15, 20);
+		//Player p1('1', 'a', 'w', 'd', 's', 15, 5);
+		//Player p2('2', 'g', 'y', 'j', 'h', 15, 20);
 
-		thread th0(Input);
-		thread th1(Move, p1);
-		thread th2(Move, p2);
-		thread th3(DrawChar, p1);
+		//thread th0(Input);
+		//thread th1(Move, &p1);
+		//thread th2(Move, p2);
+		//thread th3(DrawChar, &p1);
 
-		th0.join();
-		th1.join();
-		th2.join();
-		th3.join();
+		//th0.join();
+		//th1.join();
+		//th2.join();
+		//th3.join();
 
 
 	}
-
+#endif
 };
 
